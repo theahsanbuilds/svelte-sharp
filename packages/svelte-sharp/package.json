@@ -7,8 +7,10 @@
   "license": "MIT",
   "files": [
     "dist",
-    "compiler"
-  ],
+    "compiler",
+    "README.md",
+    "LICENSE"
+],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
