@@ -1,0 +1,173 @@
+import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import {
+    mkdir,
+    readFile,
+    stat,
+    writeFile
+} from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import type { SvelteSharpOptions } from './types.js';
+
+const packageDirectory = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '..'
+);
+
+function getCompilerPath(options: SvelteSharpOptions): string {
+    if (options.compilerPath) {
+        return resolve(options.compilerPath);
+    }
+
+    if (process.platform !== 'win32' || process.arch !== 'x64') {
+        throw new Error(
+            `SvelteSharp currently supports Windows x64 only. ` +
+            `Your platform is ${process.platform}-${process.arch}.`
+        );
+    }
+
+    return resolve(
+        packageDirectory,
+        'compiler',
+        'win-x64',
+        'SvelteSharp.Compiler.exe'
+    );
+}
+
+function createCacheKey(
+    filename: string,
+    componentCode: string,
+    csharpCode: string,
+    compilerModified: number,
+    compilerSize: number
+): string {
+    return createHash('sha256')
+        .update(filename)
+        .update(componentCode)
+        .update(csharpCode)
+        .update(String(compilerModified))
+        .update(String(compilerSize))
+        .digest('hex');
+}
+
+export async function compileComponent(
+    filename: string,
+    options: SvelteSharpOptions = {}
+): Promise<string> {
+
+    const absoluteFilename = resolve(filename);
+    const csharpFilename = `${absoluteFilename}.cs`;
+
+    const compilerPath = getCompilerPath(options);
+
+    // Read both component files.
+    const componentCode = await readFile(
+        absoluteFilename,
+        'utf8'
+    );
+
+    const csharpCode = await readFile(
+        csharpFilename,
+        'utf8'
+    );
+
+    // Check compiler information.
+    let compilerInfo;
+
+    try {
+        compilerInfo = await stat(compilerPath);
+    } catch {
+        throw new Error(
+            `SvelteSharp compiler was not found: ${compilerPath}\n` +
+            `Build the compiler using: npm run compiler:build`
+        );
+    }
+
+    // Generate a cache key.
+    const cacheKey = createCacheKey(
+        absoluteFilename,
+        componentCode,
+        csharpCode,
+        compilerInfo.mtimeMs,
+        compilerInfo.size
+    );
+
+    // Store cache inside the consuming project's node_modules.
+    const cacheDirectory = resolve(
+        process.cwd(),
+        'node_modules',
+        '.cache',
+        'svelte-sharp'
+    );
+
+    const cacheFile = resolve(
+        cacheDirectory,
+        `${cacheKey}.svelte`
+    );
+
+    // Return cached output if it exists.
+    try {
+        return await readFile(cacheFile, 'utf8');
+    } catch {
+        // Cache does not exist. Compile the component.
+    }
+
+    // Execute the compiler only when necessary.
+    const generatedCode = await new Promise<string>(
+        (resolvePromise, reject) => {
+
+            const child = spawn(
+                compilerPath,
+                [absoluteFilename],
+                {
+                    cwd: process.cwd(),
+                    stdio: ['ignore', 'pipe', 'pipe']
+                }
+            );
+
+            let stdout = '';
+            let stderr = '';
+
+            child.stdout.setEncoding('utf8');
+            child.stderr.setEncoding('utf8');
+
+            child.stdout.on('data', chunk => {
+                stdout += chunk;
+            });
+
+            child.stderr.on('data', chunk => {
+                stderr += chunk;
+            });
+
+            child.on('error', error => {
+                reject(new Error(
+                    `Could not start SvelteSharp compiler: ${error.message}`
+                ));
+            });
+
+            child.on('close', code => {
+                if (code === 0) {
+                    resolvePromise(stdout);
+                } else {
+                    reject(new Error(
+                        stderr.trim() ||
+                        `SvelteSharp compiler exited with code ${code}`
+                    ));
+                }
+            });
+        }
+    );
+
+    // Save successful output in the cache.
+    await mkdir(cacheDirectory, { recursive: true });
+
+    await writeFile(
+        cacheFile,
+        generatedCode,
+        'utf8'
+    );
+
+    return generatedCode;
+}
