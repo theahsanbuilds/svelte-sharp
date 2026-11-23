@@ -13,7 +13,7 @@ export function svelteSharpPreprocessor(
     return {
         name: 'svelte-sharp-preprocessor',
 
-        async markup({ filename }) {
+        async markup({ content, filename }) {
 
             if (!filename?.endsWith('.svelte')) {
                 return;
@@ -28,32 +28,53 @@ export function svelteSharpPreprocessor(
 
             const csharpFile = `${filename}.cs`;
 
-            if (!existsSync(csharpFile)) {
+            const hasCsharpFile = existsSync(csharpFile);
+
+            const hasInlineCode = /@code\s*\{/.test(content);
+
+            if (!hasCsharpFile && !hasInlineCode) {
                 return;
             }
 
-            registerCsharpDependency(csharpFile);
+            if (hasCsharpFile) {
+                registerCsharpDependency(csharpFile);
+            }
 
             try {
                 const code = await compileComponent(
                     filename,
-                    options
+                    options,
+                    content
                 );
 
                 return {
                     code,
-                    dependencies: [csharpFile]
+                    dependencies: hasCsharpFile
+                        ? [csharpFile]
+                        : []
                 };
 
-            } catch (error) {
-                const message = error instanceof Error
-                    ? error.message
-                    : String(error);
+            } 
+            
+           
+catch (error) {
+    const message = error instanceof Error
+        ? error.message
+        : String(error);
 
-                throw new Error(
-                    `SvelteSharp failed in ${filename}:\n${message}`
-                );
-            }
+    if (process.env.NODE_ENV === 'production') {
+        console.error(
+            `[SvelteSharp] Compilation failed in ${filename}:\n${message}`
+        );
+
+        return;
+    }
+
+    throw new Error(
+        `SvelteSharp failed in ${filename}:\n${message}`
+    );
+}
+
         }
     };
 }

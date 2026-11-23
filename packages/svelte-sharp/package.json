@@ -1,7 +1,7 @@
 
 {
   "name": "svelte-sharp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "C# component authoring for SvelteKit",
   "type": "module",
   "license": "MIT",

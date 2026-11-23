@@ -1,0 +1,51 @@
+
+{
+  "name": "svelte-sharp-vscode",
+  "displayName": "SvelteSharp",
+  "description": "C# component authoring support for Svelte and SvelteKit",
+  "version": "0.1.0",
+  "publisher": "theahsanbuilds",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theahsanbuilds/svelte-sharp"
+  },
+  "keywords": [
+    "Svelte",
+    "SvelteKit",
+    "C#",
+    "CSharp",
+    "SvelteSharp"
+  ],
+  "engines": {
+    "vscode": "^1.146.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:svelte"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --external:vscode --outfile=dist/extension.js",
+    "watch": "npm run build -- --watch",
+    "check": "tsc --noEmit",
+    "vscode:prepublish": "npm run check && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/vscode": "^1.146.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "svelte-sharp.showInfo",
+        "title": "SvelteSharp: Show Information"
+      }
+    ]
+  }
+}

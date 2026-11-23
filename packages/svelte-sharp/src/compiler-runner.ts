@@ -1,5 +1,7 @@
+
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import {
     mkdir,
     readFile,
@@ -54,7 +56,8 @@ function createCacheKey(
 
 export async function compileComponent(
     filename: string,
-    options: SvelteSharpOptions = {}
+    options: SvelteSharpOptions = {},
+    suppliedContent?: string
 ): Promise<string> {
 
     const absoluteFilename = resolve(filename);
@@ -62,16 +65,14 @@ export async function compileComponent(
 
     const compilerPath = getCompilerPath(options);
 
-    // Read both component files.
-    const componentCode = await readFile(
-        absoluteFilename,
-        'utf8'
-    );
+    // Read Svelte component content.
+const componentCode = suppliedContent ??
+    await readFile(absoluteFilename, 'utf8');
 
-    const csharpCode = await readFile(
-        csharpFilename,
-        'utf8'
-    );
+    // Read companion C# file if it exists.
+    const csharpCode = existsSync(csharpFilename)
+        ? await readFile(csharpFilename, 'utf8')
+        : '';
 
     // Check compiler information.
     let compilerInfo;
@@ -85,7 +86,7 @@ export async function compileComponent(
         );
     }
 
-    // Generate a cache key.
+    // Generate cache key.
     const cacheKey = createCacheKey(
         absoluteFilename,
         componentCode,
@@ -111,22 +112,25 @@ export async function compileComponent(
     try {
         return await readFile(cacheFile, 'utf8');
     } catch {
-        // Cache does not exist. Compile the component.
+        // Cache does not exist.
     }
 
-    // Execute the compiler only when necessary.
+    // Execute compiler.
     const generatedCode = await new Promise<string>(
         (resolvePromise, reject) => {
 
-            const child = spawn(
-                compilerPath,
-                [absoluteFilename],
-                {
-                    cwd: process.cwd(),
-                    stdio: ['ignore', 'pipe', 'pipe']
-                }
-            );
+        const useDotnet = Boolean(options.dotnetCommand);
 
+const child = spawn(
+    useDotnet ? options.dotnetCommand! : compilerPath,
+    useDotnet
+        ? [compilerPath, absoluteFilename]
+        : [absoluteFilename],
+    {
+        cwd: process.cwd(),
+        stdio: ['ignore', 'pipe', 'pipe']
+    }
+);
             let stdout = '';
             let stderr = '';
 
@@ -160,7 +164,7 @@ export async function compileComponent(
         }
     );
 
-    // Save successful output in the cache.
+    // Save successful output in cache.
     await mkdir(cacheDirectory, { recursive: true });
 
     await writeFile(

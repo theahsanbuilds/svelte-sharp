@@ -6,7 +6,7 @@
 
 It allows developers to write component logic using familiar C# syntax while keeping Svelte responsible for rendering, reactivity, and DOM updates.
 
-The goal is to bring a C# and Blazor-inspired development experience into the Svelte ecosystem — without requiring developers to write their component logic in JavaScript or TypeScript.
+The goal is to bring a C# and Blazor-inspired development experience into the Svelte ecosystem without requiring developers to write their component logic in JavaScript or TypeScript.
 
 ```csharp
 public partial class Counter
@@ -46,8 +46,12 @@ SvelteSharp translates supported C# component logic into JavaScript that Svelte 
 - **Two-Way Binding** — Use native Svelte `bind:value`.
 - **Component Parameters** — Support component parameters.
 - **Independent Component Instances** — Maintain independent state across component instances.
+- **Semantic Validation** — Detect supported C# semantic errors before generating component output.
+- **Compiler Diagnostics** — Report C# errors with source file, line, column, and diagnostic codes.
+- **Syntax Validation** — Detect invalid C# syntax during compilation.
 - **Vite Integration** — Integrate with the Vite development workflow.
 - **Local Compilation** — Compile C# component logic locally.
+- **Compilation Caching** — Cache successfully generated component output.
 
 ## Requirements
 
@@ -60,7 +64,7 @@ SvelteSharp translates supported C# component logic into JavaScript that Svelte 
 | Vite | 6 or newer |
 | Operating System | Windows x64 (current compiler distribution) |
 
-**Note:** The current compiler is distributed as a self-contained executable. Users do not need to install the .NET SDK or runtime separately.
+**Note:** The current compiler is distributed as a self-contained executable with its dependencies. Users do not need to install the .NET SDK or runtime separately.
 
 ## Installation
 
@@ -100,10 +104,10 @@ export default defineConfig({
 
 ## Your First C# Component
 
-SvelteSharp uses two files for a component:
+SvelteSharp supports two ways to write component logic:
 
-- `.svelte.cs` — C# component logic.
-- `.svelte` — Native Svelte markup.
+- `.svelte.cs` — Separate C# component logic.
+- `@code { }` — Inline C# component logic inside a `.svelte` file.
 
 ### 1. Create Counter.svelte.cs
 
@@ -166,7 +170,32 @@ Import the component into a SvelteKit page:
 npm run dev
 ```
 
-SvelteSharp translates the C# component logic during compilation. Svelte then compiles the resulting component for the browser.
+SvelteSharp translates the C# component logic during preprocessing. Svelte then compiles the resulting component for the browser.
+
+## Inline C# Code
+
+You can also write C# directly inside your `.svelte` component using `@code`.
+
+```svelte
+@code {
+    private int count = 0;
+
+    private void Increment()
+    {
+        count++;
+    }
+}
+
+<div class="counter">
+    <h2>My C# Counter</h2>
+
+    <p>Count: {count}</p>
+
+    <button onclick={Increment}>+</button>
+</div>
+```
+
+Both inline C# and companion `.svelte.cs` files are supported. When both are used, SvelteSharp combines their component logic and checks for duplicate member names.
 
 ## Two-Way Binding
 
@@ -191,6 +220,55 @@ public partial class Counter
 
 You do not need to write a separate input event handler. Svelte manages the binding and reactive updates.
 
+## Compiler Diagnostics and Semantic Validation
+
+SvelteSharp uses Roslyn to analyze supported C# component code before translation.
+
+It can detect errors such as:
+
+- Undefined variables.
+- Unknown types.
+- Invalid assignments and conversions.
+- Invalid method arguments.
+- Invalid member access.
+- Unsupported or incorrect expressions within analyzed component code.
+
+For example, this component contains an undefined variable:
+
+```csharp
+@code {
+    private int count = ss0;
+}
+```
+
+SvelteSharp reports a diagnostic similar to:
+
+```text
+Counter.svelte(2,25):
+SSW004: The name 'ss0' does not exist in the current context
+```
+
+Instead of generating JavaScript containing an undefined identifier, SvelteSharp stops compilation and reports the C# error.
+
+Diagnostics include:
+
+- Source file path.
+- Line number.
+- Column number.
+- Diagnostic code.
+- Error message.
+- Severity.
+
+The compiler also provides a diagnostics mode that can be used by developer tooling:
+
+```bash
+SvelteSharp --diagnostics Counter.svelte
+```
+
+This returns diagnostics in JSON format, making integration with editors and development tools possible.
+
+**Note:** Semantic validation currently covers supported C# members and expressions. It does not yet provide complete C# semantic analysis or full validation of every Svelte markup expression.
+
 ## How It Works
 
 SvelteSharp combines a C# compiler with the existing Svelte compilation pipeline.
@@ -198,22 +276,34 @@ SvelteSharp combines a C# compiler with the existing Svelte compilation pipeline
 ```text
        C# Component
         .svelte.cs
-            |
-            v
-   SvelteSharp Compiler
-       (.NET / Roslyn)
-            |
-            v
-   Generated JavaScript
-            |
-            v
-      Svelte 5 Compiler
-            |
-            v
-      Generated Output
-            |
-            v
-          Browser
+       or @code block
+             |
+             v
+    SvelteSharp Compiler
+         (.NET / Roslyn)
+             |
+             v
+     Syntax Validation
+             |
+             v
+    Semantic Validation
+             |
+       Errors found?
+        /        \
+      Yes         No
+       |           |
+       v           v
+   Diagnostics  Generated
+                 JavaScript
+                    |
+                    v
+             Svelte 5 Compiler
+                    |
+                    v
+              Generated Output
+                    |
+                    v
+                 Browser
 ```
 
 **SvelteSharp is not a replacement for Svelte.**
@@ -242,6 +332,7 @@ Current limitations include:
 - Windows x64 compiler distribution.
 - No full .NET runtime execution in the browser.
 - Not a drop-in replacement for Blazor.
+- Semantic validation covers only supported C# constructs.
 - Some advanced C# language features are not implemented.
 - Advanced Blazor and Razor functionality is not currently supported.
 
@@ -250,7 +341,8 @@ Current limitations include:
 The following are development goals, not promises of existing functionality.
 
 - [ ] Simplified project initialization.
-- [ ] Improved compiler diagnostics.
+- [ ] Expanded compiler diagnostics.
+- [ ] Complete markup-to-C# member validation.
 - [ ] Compilation caching and performance improvements.
 - [ ] Expanded C# language support.
 - [ ] Component lifecycle integration.

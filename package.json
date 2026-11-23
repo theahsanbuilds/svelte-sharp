@@ -1,4 +1,3 @@
-
 {
   "name": "svelte-sharp-workspace",
   "private": true,
@@ -11,10 +10,7 @@
     "build": "npm run package:build && npm run compiler:build && vite build",
     "preview": "vite preview",
     "package:build": "npm --workspace svelte-sharp run build",
-    "compiler:build": "dotnet publish compiler/SvelteSharp.Compiler/SvelteSharp.Compiler.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o packages/svelte-sharp/compiler/win-x64"
-  },
-  "dependencies": {
-    "svelte-sharp": "0.1.0"
+    "compiler:build": "dotnet publish compiler/SvelteSharp.Compiler/SvelteSharp.Compiler.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o packages/svelte-sharp/compiler/win-x64"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^6.0.0",
@@ -23,6 +19,6 @@
     "@types/node": "^22.0.0",
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
-    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+    "vite": "^6.0.0"
   }
 }

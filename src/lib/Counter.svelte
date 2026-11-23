@@ -1,4 +1,6 @@
-
+@code{
+    private int count = a1;
+}
 <div class="counter">
     <h2>{Title}</h2>
 
