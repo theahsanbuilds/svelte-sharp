@@ -46,6 +46,12 @@ SvelteSharp translates supported C# component logic into JavaScript that Svelte 
 - **Two-Way Binding** — Use native Svelte `bind:value`.
 - **Component Parameters** — Support component parameters.
 - **Independent Component Instances** — Maintain independent state across component instances.
+- **Razor-Style Conditional Rendering** — Use `@if`, `else if`, and `else` in component markup.
+- **Razor-Style Loops** — Use `@foreach` and supported `@for` loops.
+- **Razor-Style Switch Statements** — Use `@switch`, `case`, and `default`.
+- **Nested Control Flow** — Combine supported conditional statements and loops.
+- **Markup Parsing** — Parse Razor-style directives into an intermediate representation before translation.
+- **Svelte Code Generation** — Generate native Svelte control-flow blocks from supported Razor syntax.
 - **Semantic Validation** — Detect supported C# semantic errors before generating component output.
 - **Compiler Diagnostics** — Report C# errors with source file, line, column, and diagnostic codes.
 - **Syntax Validation** — Detect invalid C# syntax during compilation.
@@ -220,6 +226,110 @@ public partial class Counter
 
 You do not need to write a separate input event handler. Svelte manages the binding and reactive updates.
 
+## Razor-Style Markup Control Flow
+
+SvelteSharp supports a Razor-inspired syntax for writing conditional rendering and loops directly inside `.svelte` components.
+
+Instead of manually writing Svelte control-flow blocks, developers can use familiar C#-inspired markup syntax.
+
+### Conditional Rendering
+
+Use `@if`, `else if`, and `else`:
+
+```razor
+@if (count > 10)
+{
+    <h2>Greater than 10</h2>
+}
+else if (count == 10)
+{
+    <h2>Exactly 10</h2>
+}
+else
+{
+    <h2>Less than 10</h2>
+}
+```
+
+SvelteSharp translates these blocks into native Svelte conditional rendering.
+
+### Foreach Loops
+
+Use `@foreach` to render collections:
+
+```razor
+@foreach (var product in products)
+{
+    <p>{product.Name}</p>
+}
+```
+
+### For Loops
+
+Use supported C#-style `@for` loops:
+
+```razor
+@for (int i = 0; i < 5; i++)
+{
+    <p>Number: {i}</p>
+}
+```
+
+### Switch Statements
+
+Use `@switch` for conditional branches:
+
+```razor
+@switch (status)
+{
+    case 1:
+        <p>Waiting for approval</p>
+        break;
+
+    case 2:
+        <p>Approved</p>
+        break;
+
+    default:
+        <p>Unknown status</p>
+        break;
+}
+```
+
+### Nested Control Flow
+
+Supported control-flow blocks can be nested:
+
+```razor
+@foreach (var product in products)
+{
+    @if (product.Price > 100)
+    {
+        <p>{product.Name} is expensive.</p>
+    }
+}
+```
+
+### Native Svelte Compatibility
+
+SvelteSharp translates supported Razor-style control flow into native Svelte syntax.
+
+For example:
+
+| SvelteSharp syntax | Generated Svelte syntax |
+|---|---|
+| `@if` | `{#if}` |
+| `else if` | `{:else if}` |
+| `else` | `{:else}` |
+| `@foreach` | `{#each}` |
+| `@for` | `{#each}` |
+| `@switch` | Conditional rendering blocks |
+
+Svelte remains responsible for rendering, reactive updates, and DOM management.
+
+**Note:** Control-flow support is experimental. Only the supported syntax and loop patterns are currently implemented. Full C# and Razor language compatibility is not provided.
+
+
 ## Compiler Diagnostics and Semantic Validation
 
 SvelteSharp uses Roslyn to analyze supported C# component code before translation.
@@ -271,40 +381,54 @@ This returns diagnostics in JSON format, making integration with editors and dev
 
 ## How It Works
 
-SvelteSharp combines a C# compiler with the existing Svelte compilation pipeline.
+SvelteSharp combines a C# compiler, Roslyn semantic analysis, and a Razor-inspired markup translator with the existing Svelte compilation pipeline.
 
 ```text
-       C# Component
-        .svelte.cs
-       or @code block
-             |
-             v
-    SvelteSharp Compiler
-         (.NET / Roslyn)
-             |
-             v
-     Syntax Validation
-             |
-             v
-    Semantic Validation
-             |
-       Errors found?
-        /        \
-      Yes         No
-       |           |
-       v           v
-   Diagnostics  Generated
-                 JavaScript
-                    |
-                    v
+             C# Component
+              .svelte.cs
+             or @code block
+                   |
+                   v
+          SvelteSharp Compiler
+              (.NET / Roslyn)
+                   |
+                   v
+             Syntax Validation
+                   |
+                   v
+            Semantic Validation
+                   |
+                   v
+          C# to JavaScript Translation
+                   |
+                   v
+             Markup Parser
+                   |
+                   v
+        Intermediate Representation
+                (RazorNode)
+                   |
+                   v
+          Svelte Markup Translator
+                   |
+                   v
+            Generated Svelte
+                   |
+                   v
              Svelte 5 Compiler
-                    |
-                    v
-              Generated Output
-                    |
-                    v
+                   |
+                   v
+             Generated Output
+                   |
+                   v
                  Browser
 ```
+
+The markup parser recognizes supported Razor-style directives and converts them into an intermediate representation.
+
+The markup translator processes these nodes and generates corresponding Svelte syntax.
+
+This architecture separates parsing, intermediate representation, and code generation, making it easier to expand the supported markup language in future versions.
 
 **SvelteSharp is not a replacement for Svelte.**
 
@@ -335,6 +459,11 @@ Current limitations include:
 - Semantic validation covers only supported C# constructs.
 - Some advanced C# language features are not implemented.
 - Advanced Blazor and Razor functionality is not currently supported.
+- Razor-style markup support is limited to implemented directives.
+- Advanced C# for loop patterns are not supported.
+- Full C# switch semantics and all switch patterns are not implemented.
+- Advanced Razor features such as templates, sections, and tag helpers are not supported.
+- Generated Svelte expressions must follow Svelte's syntax and compatibility rules.
 
 ## Roadmap
 

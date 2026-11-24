@@ -1,7 +1,6 @@
-
 {
   "name": "svelte-sharp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "C# component authoring for SvelteKit",
   "type": "module",
   "license": "MIT",
@@ -10,7 +9,7 @@
     "compiler",
     "README.md",
     "LICENSE"
-],
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

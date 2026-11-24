@@ -13,7 +13,6 @@
   <p>Testing C# component translation.</p>
 
   <Counter title="Sales Counter" />
-  <Counter title="Purchase Counter" />
 </main>
 
 <style>

@@ -5,6 +5,7 @@
   "description": "C# component authoring support for Svelte and SvelteKit",
   "version": "0.1.0",
   "publisher": "theahsanbuilds",
+  "icon": "icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",

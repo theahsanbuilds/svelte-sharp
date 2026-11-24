@@ -172,12 +172,7 @@ public static async Task<IReadOnlyList<CompilerDiagnostic>>
 
     if (inline is not null)
     {
-        var match = Regex.Match(
-            svelteSource,
-            @"@code\b\s*\{");
-
-        var inlineStart =
-            match.Index + match.Length;
+       var inlineStart = inline.CodeStart;
 
         var prefix =
             $"partial class {componentName}\n" +
@@ -185,7 +180,7 @@ public static async Task<IReadOnlyList<CompilerDiagnostic>>
 
         var wrappedSource =
             prefix +
-            inline.Value.Code +
+            inline.Code +
             "\n}";
 
         var tree = CSharpSyntaxTree.ParseText(
@@ -480,9 +475,9 @@ public static async Task<string> TranslateFileAsync(
 
         if (inline is not null)
         {
-            svelteSource = inline.Value.Markup;
+            svelteSource = inline.Markup;
         }
-
+svelteSource = RazorMarkupTranslator.Transform(svelteSource);
         var match = Regex.Match(
             svelteSource,
             @"<script\b[^>]*>",
@@ -536,49 +531,86 @@ public static async Task<string> TranslateFileAsync(
     // =========================================================
     // EXTRACT INLINE @code
     // =========================================================
+private sealed record InlineCodeBlock(
+    string Code,
+    string Markup,
+    int CodeStart,
+    int DirectiveStart,
+    int ClosingBrace
+);
+    
+private static InlineCodeBlock? ExtractInlineCode(string source)
+{
+    var match = Regex.Match(
+        source,
+        @"@code\b\s*\{");
 
-    private static (
-        string Code,
-        string Markup
-    )? ExtractInlineCode(string source)
+    if (!match.Success)
+        return null;
+
+    var openBrace = match.Index + match.Length - 1;
+    var codeStart = openBrace + 1;
+
+    // Let Roslyn tokenize the source from the opening brace.
+    // String contents and comments are handled by the C# lexer.
+    var parseOptions = CSharpParseOptions.Default
+        .WithLanguageVersion(LanguageVersion.Preview);
+
+    var tokens = SyntaxFactory.ParseTokens(
+        source[openBrace..],
+        options: parseOptions);
+
+    var depth = 0;
+    var closeBrace = -1;
+
+    foreach (var token in tokens)
     {
-        var match = Regex.Match(
-            source,
-            @"@code\b\s*\{");
+        if (token.IsKind(SyntaxKind.EndOfFileToken))
+            break;
 
-        if (!match.Success)
-            return null;
-
-        var openBrace =
-            match.Index + match.Length - 1;
-
-        var closeBrace = FindMatchingBrace(
-            source,
-            openBrace);
-
-        if (closeBrace < 0)
+        if (token.IsKind(SyntaxKind.OpenBraceToken))
         {
-            throw new InvalidOperationException(
-                "Unclosed @code block. Check your C# braces.");
+            depth++;
         }
-
-        var remaining = source[(closeBrace + 1)..];
-
-        if (Regex.IsMatch(remaining, @"@code\b\s*\{"))
+        else if (token.IsKind(SyntaxKind.CloseBraceToken))
         {
-            throw new InvalidOperationException(
-                "Only one @code block is supported per component.");
+            depth--;
+
+            if (depth == 0)
+            {
+                closeBrace = openBrace + token.SpanStart;
+                break;
+            }
         }
-
-        var code = source[
-            (openBrace + 1)..closeBrace];
-
-        var markup =
-            source[..match.Index] +
-            source[(closeBrace + 1)..];
-
-        return (code, markup);
     }
+
+    if (closeBrace < 0)
+    {
+        throw new InvalidOperationException(
+            "Unclosed @code block. Check your C# syntax.");
+    }
+
+    var remaining = source[(closeBrace + 1)..];
+
+    if (Regex.IsMatch(remaining, @"@code\b\s*\{"))
+    {
+        throw new InvalidOperationException(
+            "Only one @code block is supported per component.");
+    }
+
+    var code = source[codeStart..closeBrace];
+
+    var markup =
+        source[..match.Index] +
+        remaining;
+
+    return new InlineCodeBlock(
+        code,
+        markup,
+        codeStart,
+        match.Index,
+        closeBrace);
+}
 
 
     // =========================================================
