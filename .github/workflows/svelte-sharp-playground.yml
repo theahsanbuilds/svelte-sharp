@@ -43,46 +43,36 @@ jobs:
           cache: npm
           cache-dependency-path: playground/package-lock.json
 
+     
       - name: Publish .NET WebAssembly compiler
         run: |
+          dotnet --info
+          dotnet workload list
+
           dotnet publish playground/compiler/SvelteSharp.Playground.Compiler.csproj \
             -c Release \
             -r browser-wasm \
             --self-contained true \
-            -p:WasmAppBundle=true
+            -p:WasmAppDir="${{ github.workspace }}/playground/static/compiler"
 
-      - name: Copy WebAssembly AppBundle
+      - name: Verify WebAssembly compiler output
         shell: bash
         run: |
-          OUTPUT_DIR="playground/compiler/bin/Release/net9.0/browser-wasm"
+          echo "Published compiler files:"
+          find playground/static/compiler -maxdepth 3 -type f | sort | head -150
 
-          echo "Searching for WebAssembly AppBundle..."
-
-          BUNDLE_DIR=$(find "$OUTPUT_DIR" \
-            -type d \
-            -name AppBundle \
-            -print -quit)
-
-          if [ -z "$BUNDLE_DIR" ]; then
-            echo "::error::WebAssembly AppBundle was not generated."
-            echo "Available published files:"
-            find "$OUTPUT_DIR" -maxdepth 5 -type f | sort | head -200
+          if [ ! -f playground/static/compiler/_framework/dotnet.js ]; then
+            echo "::error::Missing _framework/dotnet.js"
             exit 1
           fi
-
-          echo "Found AppBundle: $BUNDLE_DIR"
-
-          mkdir -p playground/static/compiler
-
-          cp -a "$BUNDLE_DIR"/. playground/static/compiler/
-
-          echo "Copied compiler files:"
-          find playground/static/compiler -maxdepth 3 -type f | sort | head -100
 
           if [ ! -f playground/static/compiler/main.js ]; then
-            echo "::error::main.js is missing from the WebAssembly bundle."
+            echo "::error::Missing main.js"
             exit 1
           fi
+
+          echo "WebAssembly compiler output verified."
+
 
       - name: Install playground packages
         working-directory: playground
