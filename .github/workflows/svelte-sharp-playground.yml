@@ -25,77 +25,123 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9
+      # 2. Install the same .NET SDK as local machine
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.401'
 
-      - name: Install WebAssembly workload
-        run: dotnet workload install wasm-tools
+      # 3. Install both WebAssembly workloads
+      - name: Install WebAssembly workloads
+        run: |
+          dotnet --version
+          dotnet workload install wasm-tools wasm-tools-net9
+          dotnet workload list
 
-      - name: Setup Node.js 22
+      # 4. Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: playground/package-lock.json
 
-     
+      # 5. Publish browser WebAssembly compiler
       - name: Publish .NET WebAssembly compiler
         run: |
-          dotnet --info
-          dotnet workload list
-
           dotnet publish playground/compiler/SvelteSharp.Playground.Compiler.csproj \
             -c Release \
             -r browser-wasm \
-            --self-contained true \
-            -p:WasmAppDir="${{ github.workspace }}/playground/static/compiler"
+            --self-contained true
 
-      - name: Verify WebAssembly compiler output
+      # 6. Copy the actual AppBundle
+      - name: Copy WebAssembly AppBundle
         shell: bash
         run: |
-          echo "Published compiler files:"
-          find playground/static/compiler -maxdepth 3 -type f | sort | head -150
+          set -euo pipefail
 
-          if [ ! -f playground/static/compiler/_framework/dotnet.js ]; then
-            echo "::error::Missing _framework/dotnet.js"
+          BUNDLE_DIR="playground/compiler/bin/Release/net9.0/browser-wasm/AppBundle"
+          TARGET_DIR="playground/static/compiler"
+
+          echo "Checking WebAssembly AppBundle..."
+
+          if [ ! -d "$BUNDLE_DIR" ]; then
+            echo "::error::AppBundle directory not found: $BUNDLE_DIR"
+            echo "Available build output:"
+            find playground/compiler/bin/Release -maxdepth 6 -type f | sort | head -200
             exit 1
           fi
 
-          if [ ! -f playground/static/compiler/main.js ]; then
-            echo "::error::Missing main.js"
-            exit 1
-          fi
+          # Verify required runtime files
+          test -f "$BUNDLE_DIR/main.js"
+          test -f "$BUNDLE_DIR/_framework/dotnet.js"
+          test -f "$BUNDLE_DIR/_framework/blazor.boot.json"
 
-          echo "WebAssembly compiler output verified."
+          # Prepare destination
+          mkdir -p "$TARGET_DIR"
 
+          # Copy complete browser application
+          cp -a "$BUNDLE_DIR"/. "$TARGET_DIR"/
 
+          echo "WebAssembly AppBundle copied successfully."
+
+      # 7. Verify compiler files
+      - name: Verify WebAssembly compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TARGET_DIR="playground/static/compiler"
+
+          echo "Compiler files:"
+          find "$TARGET_DIR" -maxdepth 3 -type f | sort | head -150
+
+          test -f "$TARGET_DIR/main.js"
+          test -f "$TARGET_DIR/_framework/dotnet.js"
+          test -f "$TARGET_DIR/_framework/blazor.boot.json"
+
+          echo "WebAssembly compiler verified."
+
+      # 8. Install playground npm packages
       - name: Install playground packages
         working-directory: playground
         run: npm ci
 
+      # 9. Build SvelteSharp Playground
       - name: Build playground
         working-directory: playground
         run: npx vite build
 
-      - name: Verify compiler assets in website
+      # 10. Verify final website
+      - name: Verify website output
+        shell: bash
         run: |
-          echo "Checking generated website..."
-          test -f playground/dist/index.html
-          find playground/dist/compiler -maxdepth 3 -type f | head -100
+          set -euo pipefail
 
+          echo "Checking generated website..."
+
+          test -f playground/dist/index.html
+          test -f playground/dist/compiler/main.js
+          test -f playground/dist/compiler/_framework/dotnet.js
+          test -f playground/dist/compiler/_framework/blazor.boot.json
+
+          echo "Website build verified successfully."
+
+      # 11. Configure GitHub Pages
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      # 12. Upload website
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: playground/dist
 
+  # 13. Deploy to GitHub Pages
   deploy:
     needs: build
     runs-on: ubuntu-latest
