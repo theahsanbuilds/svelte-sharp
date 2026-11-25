@@ -50,11 +50,32 @@ jobs:
             -r browser-wasm \
             --self-contained true
 
-      - name: Copy WebAssembly AppBundle
+      - name: Copy WebAssembly compiler
+        shell: bash
         run: |
+          BOOT_FILE=$(find playground/compiler \
+            -type f \
+            -path '*/_framework/blazor.boot.json' \
+            -print -quit)
+
+          if [ -z "$BOOT_FILE" ]; then
+            echo "::error::blazor.boot.json not found"
+            find playground/compiler -type f | head -100
+            exit 1
+          fi
+
+          BUNDLE_DIR=$(dirname "$(dirname "$BOOT_FILE")")
+
+          echo "Compiler bundle: $BUNDLE_DIR"
+
           mkdir -p playground/static/compiler
-          cp -a playground/compiler/bin/Release/net9.0/browser-wasm/AppBundle/. \
-            playground/static/compiler/
+
+          cp -a "$BUNDLE_DIR"/. playground/static/compiler/
+
+          test -f playground/static/compiler/_framework/blazor.boot.json
+          test -f playground/static/compiler/main.js
+
+          echo "Compiler bundle copied successfully."
 
       - name: Install playground packages
         working-directory: playground
