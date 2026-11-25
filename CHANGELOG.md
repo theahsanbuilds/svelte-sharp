@@ -2,6 +2,22 @@
 
 All notable changes to SvelteSharp are documented in this file.
 
+## [0.1.2] - 2026-11-26
+
+### Added
+
+- Published the browser-based SvelteSharp Playground.
+- Added .NET WebAssembly compiler support for in-browser C# to Svelte translation.
+- Added a browser-based development environment for editing C# component logic and Svelte markup.
+- Added live compiler translation and generated Svelte output display.
+- Added local browser storage for Playground source persistence.
+
+### Improved
+
+- Improved project documentation and installation guidance.
+- Added direct links to the Live Playground from project documentation.
+- Improved separation between the compiler, npm package, and Playground deployment.
+
 ## [0.1.1] - 2026-11-24
 
 ### Added
@@ -80,6 +96,7 @@ See the [README](README.md) for installation instructions, supported features, a
 
 ## Links
 
+- [Live Playground](https://theahsanbuilds.github.io/svelte-sharp/)
 - [GitHub Repository](https://github.com/theahsanbuilds/svelte-sharp)
 - [npm Package](https://www.npmjs.com/package/svelte-sharp)
 - [Svelte](https://svelte.dev/)

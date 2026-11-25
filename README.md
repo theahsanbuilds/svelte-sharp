@@ -4,7 +4,9 @@
 
 **SvelteSharp** is an experimental C# component authoring toolkit for [Svelte 5](https://svelte.dev/) and [SvelteKit](https://svelte.dev/docs/kit).
 
-It allows developers to write component logic using familiar C# syntax while keeping Svelte responsible for rendering, reactivity, and DOM updates.
+[**🚀 Live Playground**](https://theahsanbuilds.github.io/svelte-sharp/) · [**npm Package**](https://www.npmjs.com/package/svelte-sharp) · [**GitHub Repository**](https://github.com/theahsanbuilds/svelte-sharp)
+
+SvelteSharp allows developers to write component logic using familiar C# syntax while keeping Svelte responsible for rendering, reactivity, and DOM updates.
 
 The goal is to bring a C# and Blazor-inspired development experience into the Svelte ecosystem without requiring developers to write their component logic in JavaScript or TypeScript.
 
@@ -46,12 +48,12 @@ SvelteSharp translates supported C# component logic into JavaScript that Svelte 
 - **Two-Way Binding** — Use native Svelte `bind:value`.
 - **Component Parameters** — Support component parameters.
 - **Independent Component Instances** — Maintain independent state across component instances.
-- **Razor-Style Conditional Rendering** — Use `@if`, `else if`, and `else` in component markup.
+- **Razor-Style Conditional Rendering** — Use `@if`, `else if`, and `else`.
 - **Razor-Style Loops** — Use `@foreach` and supported `@for` loops.
 - **Razor-Style Switch Statements** — Use `@switch`, `case`, and `default`.
 - **Nested Control Flow** — Combine supported conditional statements and loops.
-- **Markup Parsing** — Parse Razor-style directives into an intermediate representation before translation.
-- **Svelte Code Generation** — Generate native Svelte control-flow blocks from supported Razor syntax.
+- **Markup Parsing** — Parse Razor-style directives into an intermediate representation.
+- **Svelte Code Generation** — Generate native Svelte control-flow blocks.
 - **Semantic Validation** — Detect supported C# semantic errors before generating component output.
 - **Compiler Diagnostics** — Report C# errors with source file, line, column, and diagnostic codes.
 - **Syntax Validation** — Detect invalid C# syntax during compilation.
@@ -230,8 +232,6 @@ You do not need to write a separate input event handler. Svelte manages the bind
 
 SvelteSharp supports a Razor-inspired syntax for writing conditional rendering and loops directly inside `.svelte` components.
 
-Instead of manually writing Svelte control-flow blocks, developers can use familiar C#-inspired markup syntax.
-
 ### Conditional Rendering
 
 Use `@if`, `else if`, and `else`:
@@ -250,8 +250,6 @@ else
     <h2>Less than 10</h2>
 }
 ```
-
-SvelteSharp translates these blocks into native Svelte conditional rendering.
 
 ### Foreach Loops
 
@@ -314,8 +312,6 @@ Supported control-flow blocks can be nested:
 
 SvelteSharp translates supported Razor-style control flow into native Svelte syntax.
 
-For example:
-
 | SvelteSharp syntax | Generated Svelte syntax |
 |---|---|
 | `@if` | `{#if}` |
@@ -328,7 +324,6 @@ For example:
 Svelte remains responsible for rendering, reactive updates, and DOM management.
 
 **Note:** Control-flow support is experimental. Only the supported syntax and loop patterns are currently implemented. Full C# and Razor language compatibility is not provided.
-
 
 ## Compiler Diagnostics and Semantic Validation
 
@@ -399,20 +394,20 @@ SvelteSharp combines a C# compiler, Roslyn semantic analysis, and a Razor-inspir
             Semantic Validation
                    |
                    v
-          C# to JavaScript Translation
+         C# to JavaScript Translation
                    |
                    v
-             Markup Parser
+              Markup Parser
                    |
                    v
         Intermediate Representation
-                (RazorNode)
+               (RazorNode)
                    |
                    v
           Svelte Markup Translator
                    |
                    v
-            Generated Svelte
+             Generated Svelte
                    |
                    v
              Svelte 5 Compiler
@@ -444,7 +439,7 @@ The repository is organized into three main areas:
 | `packages/svelte-sharp/` | Reusable npm package and Vite integration |
 | `src/` and `static/` | SvelteKit development playground |
 
-The compiler and npm package are designed to remain independent of the development playground.
+The browser Playground is maintained separately from the reusable compiler and npm package.
 
 ## Current Limitations
 
@@ -460,7 +455,7 @@ Current limitations include:
 - Some advanced C# language features are not implemented.
 - Advanced Blazor and Razor functionality is not currently supported.
 - Razor-style markup support is limited to implemented directives.
-- Advanced C# for loop patterns are not supported.
+- Advanced C# `for` loop patterns are not supported.
 - Full C# switch semantics and all switch patterns are not implemented.
 - Advanced Razor features such as templates, sections, and tag helpers are not supported.
 - Generated Svelte expressions must follow Svelte's syntax and compatibility rules.
@@ -493,6 +488,7 @@ Feedback, bug reports, feature suggestions, and contributions are welcome.
 
 ## Links
 
+- **Live Playground:** https://theahsanbuilds.github.io/svelte-sharp/
 - **npm:** https://www.npmjs.com/package/svelte-sharp
 - **GitHub:** https://github.com/theahsanbuilds/svelte-sharp
 - **Svelte:** https://svelte.dev/

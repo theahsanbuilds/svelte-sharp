@@ -1,8 +1,10 @@
 # SvelteSharp
 
-**Write C#. Build with Svelte.**
+### Write C#. Build with Svelte.
 
-SvelteSharp is an experimental C# component authoring toolkit for **Svelte 5 and SvelteKit**.
+**SvelteSharp** is an experimental C# component authoring toolkit for **Svelte 5 and SvelteKit**.
+
+[🚀 Live Playground](https://theahsanbuilds.github.io/svelte-sharp/) · [npm Package](https://www.npmjs.com/package/svelte-sharp) · [GitHub Repository](https://github.com/theahsanbuilds/svelte-sharp)
 
 It allows developers to write component logic using familiar C# syntax while using Svelte for rendering, reactivity, and DOM updates.
 
@@ -348,10 +350,10 @@ SvelteSharp combines a .NET compiler, Roslyn semantic analysis, a markup parser,
 .svelte file + optional .svelte.cs file
                  |
                  v
-          SvelteSharp Preprocessor
+         SvelteSharp Preprocessor
                  |
                  v
-           C# Source Processing
+          C# Source Processing
                  |
                  v
            Syntax Validation
@@ -363,7 +365,7 @@ SvelteSharp combines a .NET compiler, Roslyn semantic analysis, a markup parser,
           C# Code Translation
                  |
                  v
-             Markup Parser
+              Markup Parser
                  |
                  v
        Intermediate Representation
@@ -436,13 +438,32 @@ Current limitations include:
 - [ ] Blazor migration tooling.
 - [ ] Linux and macOS support.
 
-## Source Code
+## Project Status
 
-GitHub: https://github.com/theahsanbuilds/svelte-sharp
+SvelteSharp is an experimental project under active development.
 
-npm: https://www.npmjs.com/package/svelte-sharp
+APIs, compiler behavior, and supported C# syntax may change between releases.
 
-Bug reports, suggestions, and contributions are welcome.
+Feedback, bug reports, suggestions, and contributions are welcome.
+
+## Links
+
+- **Live Playground:** https://theahsanbuilds.github.io/svelte-sharp/
+- **npm:** https://www.npmjs.com/package/svelte-sharp
+- **GitHub:** https://github.com/theahsanbuilds/svelte-sharp
+- **Svelte:** https://svelte.dev/
+- **SvelteKit:** https://svelte.dev/docs/kit
+
+## Contributing
+
+Contributions and ideas are welcome.
+
+If you find a bug or have a feature suggestion:
+
+1. Open a GitHub issue.
+2. Describe the problem or proposed improvement.
+3. Include a minimal example where possible.
+4. Submit a pull request if you would like to contribute code.
 
 ## License
 
