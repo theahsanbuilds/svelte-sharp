@@ -1,0 +1,90 @@
+
+name: Deploy SvelteSharp Playground
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'playground/**'
+      - 'compiler/**'
+      - '.github/workflows/svelte-sharp-playground.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install WebAssembly workload
+        run: dotnet workload install wasm-tools
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: playground/package-lock.json
+
+      - name: Publish .NET WebAssembly compiler
+        run: |
+          dotnet publish playground/compiler/SvelteSharp.Playground.Compiler.csproj \
+            -c Release \
+            -r browser-wasm \
+            --self-contained true
+
+      - name: Copy WebAssembly AppBundle
+        run: |
+          mkdir -p playground/static/compiler
+          cp -a playground/compiler/bin/Release/net9.0/browser-wasm/AppBundle/. \
+            playground/static/compiler/
+
+      - name: Install playground packages
+        working-directory: playground
+        run: npm ci
+
+      - name: Build playground
+        working-directory: playground
+        run: npx vite build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: playground/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
