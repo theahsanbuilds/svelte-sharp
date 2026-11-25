@@ -1,0 +1,40 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="brand" x1="8" y1="5" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="symbol" x1="17" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ddd6fe"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Studio brand tile -->
+  <rect width="64" height="64" rx="15" fill="#0b0d12"/>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#brand)"/>
+
+  <!-- Compiler transformation brackets -->
+  <path d="M23 14L11 32L23 50"
+        fill="none" stroke="url(#symbol)"
+        stroke-width="5" stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <path d="M41 14L53 32L41 50"
+        fill="none" stroke="url(#symbol)"
+        stroke-width="5" stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- C# sharp mark -->
+  <g stroke="#ffffff" stroke-width="3.5" stroke-linecap="round">
+    <path d="M29 23L25 43"/>
+    <path d="M39 23L35 43"/>
+    <path d="M26 29H42"/>
+    <path d="M24 37H40"/>
+  </g>
+
+  <!-- Compiler transformation core -->
+  <path d="M32 17L37 32L31 32L34 47L26 29L32 29Z"
+        fill="#c4b5fd"/>
+</svg>
