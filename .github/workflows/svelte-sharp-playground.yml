@@ -48,34 +48,41 @@ jobs:
           dotnet publish playground/compiler/SvelteSharp.Playground.Compiler.csproj \
             -c Release \
             -r browser-wasm \
-            --self-contained true
+            --self-contained true \
+            -p:WasmAppBundle=true
 
-      - name: Copy WebAssembly compiler
+      - name: Copy WebAssembly AppBundle
         shell: bash
         run: |
-          BOOT_FILE=$(find playground/compiler \
-            -type f \
-            -path '*/_framework/blazor.boot.json' \
+          OUTPUT_DIR="playground/compiler/bin/Release/net9.0/browser-wasm"
+
+          echo "Searching for WebAssembly AppBundle..."
+
+          BUNDLE_DIR=$(find "$OUTPUT_DIR" \
+            -type d \
+            -name AppBundle \
             -print -quit)
 
-          if [ -z "$BOOT_FILE" ]; then
-            echo "::error::blazor.boot.json not found"
-            find playground/compiler -type f | head -100
+          if [ -z "$BUNDLE_DIR" ]; then
+            echo "::error::WebAssembly AppBundle was not generated."
+            echo "Available published files:"
+            find "$OUTPUT_DIR" -maxdepth 5 -type f | sort | head -200
             exit 1
           fi
 
-          BUNDLE_DIR=$(dirname "$(dirname "$BOOT_FILE")")
-
-          echo "Compiler bundle: $BUNDLE_DIR"
+          echo "Found AppBundle: $BUNDLE_DIR"
 
           mkdir -p playground/static/compiler
 
           cp -a "$BUNDLE_DIR"/. playground/static/compiler/
 
-          test -f playground/static/compiler/_framework/blazor.boot.json
-          test -f playground/static/compiler/main.js
+          echo "Copied compiler files:"
+          find playground/static/compiler -maxdepth 3 -type f | sort | head -100
 
-          echo "Compiler bundle copied successfully."
+          if [ ! -f playground/static/compiler/main.js ]; then
+            echo "::error::main.js is missing from the WebAssembly bundle."
+            exit 1
+          fi
 
       - name: Install playground packages
         working-directory: playground
@@ -84,6 +91,12 @@ jobs:
       - name: Build playground
         working-directory: playground
         run: npx vite build
+
+      - name: Verify compiler assets in website
+        run: |
+          echo "Checking generated website..."
+          test -f playground/dist/index.html
+          find playground/dist/compiler -maxdepth 3 -type f | head -100
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
